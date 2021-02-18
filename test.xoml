@@ -1,0 +1,197 @@
+﻿<StateMachineWorkflowActivity x:Class="Symyx.Workflow.PilotWorkflow" InitialStateName="InProgress" x:Name="PilotWorkflow" DynamicUpdateCondition="{x:Null}" CompletedStateName="TerminateWorkFlow" xmlns:ns0="clr-namespace:Symyx.Workflow;Assembly=Symyx.Workflow.SecurityActivity, Version=17.2.0.2415, Culture=neutral, PublicKeyToken=fb4b5791c48b7e8a" xmlns:ns1="clr-namespace:Symyx.Workflow;Assembly=Symyx.Workflow.TransitionActivity, Version=17.2.0.2415, Culture=neutral, PublicKeyToken=fb4b5791c48b7e8a" xmlns:ns2="clr-namespace:Symyx.Workflow;Assembly=Symyx.Workflow.TaskActivity, Version=17.2.0.2415, Culture=neutral, PublicKeyToken=fb4b5791c48b7e8a" xmlns:ns3="clr-namespace:Symyx.Workflow;Assembly=Symyx.Workflow.ReviewActivity, Version=17.2.0.2415, Culture=neutral, PublicKeyToken=fb4b5791c48b7e8a" xmlns:ns4="clr-namespace:Symyx.Workflow;Assembly=Symyx.Workflow.CommentsActivity, Version=17.2.0.2415, Culture=neutral, PublicKeyToken=fb4b5791c48b7e8a" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/workflow">
+	<StateActivity x:Name="InProgress" Description="Keep in progress">
+		<StateInitializationActivity x:Name="stateInitializationActivity1">
+			<ns0:SymyxRemoveSecurityActivity x:Name="symyxRemoveSecurityActivity5" SecurityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<ns0:SymyxSetSecurityActivity SecurityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetSecurityActivity1" ActorPermissions="&lt;WorkflowPermissions&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;TraverseFolder ReadData WriteData UpdateProperties UpdateFlags ReadPermissions UpdatePermissions WorkflowTransition Checkout ReadProperties&quot; type=&quot;allow&quot; actor=&quot;Author&quot; /&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;Rollback&quot; type=&quot;deny&quot; actor=&quot;Author&quot; /&gt;&#xD;&#xA;&lt;/WorkflowPermissions&gt;" />
+		</StateInitializationActivity>
+		<EventDrivenActivity x:Name="inProgressToRequestWitnessActivity" Description="Document is Ready for Review">
+			<ns1:SymyxTransitionActivity Description="Request Witness" Title="Request Witness" EventKey="inProgressToCompleteActivity+Symyx.Workflow.ISymyxWorkflowEvent+Event01" x:Name="DocumentIsComplete" EventName="Event01" AllowedActors="Author" RequiredSignature="Submit" />
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity11" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<ns3:SymyxReviewActivity ActivityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxReviewActivity1" UnableToReview="{ActivityBind PilotWorkflow,Path=UnableToReview}" Workspace="{x:Null}" InformationalCount="{ActivityBind PilotWorkflow,Path=InformationalCount}" WarningCount="{ActivityBind PilotWorkflow,Path=WarningCount}" ErrorCount="{ActivityBind PilotWorkflow,Path=ErrorCount}" ReviewResults="{ActivityBind PilotWorkflow,Path=ReviewResults}" />
+			<IfElseActivity x:Name="ifElseActivity1">
+				<IfElseBranchActivity x:Name="UnableToReviewActivity" Description="Unable To Review ">
+					<IfElseBranchActivity.Condition>
+						<RuleConditionReference ConditionName="UnableToReview" />
+					</IfElseBranchActivity.Condition>
+					<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity2" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Witness&quot; title=&quot;Experiment  is Ready for witness&quot; description=&quot;Please witness experiment and transition as needed. Review was unable to be run.&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+					<SetStateActivity x:Name="setStateActivity2" TargetStateName="PendingWitness" />
+				</IfElseBranchActivity>
+				<IfElseBranchActivity x:Name="ifElseBranchActivity2" Description="Has Errors">
+					<IfElseBranchActivity.Condition>
+						<RuleConditionReference ConditionName="HasErrors" />
+					</IfElseBranchActivity.Condition>
+					<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity3" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Author&quot; title=&quot;Experiment  Failed Review&quot; description=&quot;Please correct experiment problems and transition again. (Failed Review)&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+					<SetStateActivity x:Name="setStateActivity14" TargetStateName="InProgress" />
+				</IfElseBranchActivity>
+				<IfElseBranchActivity x:Name="ifElseBranchActivity3" Description="Has Warnings">
+					<IfElseBranchActivity.Condition>
+						<RuleConditionReference ConditionName="HasWarnings" />
+					</IfElseBranchActivity.Condition>
+					<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity7" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Witness&quot; title=&quot;Experiment  is Ready for witness&quot; description=&quot;Please witness experiment and transition as needed. Warnings were found on review.&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+					<SetStateActivity x:Name="setStateActivity15" TargetStateName="PendingWitness" />
+				</IfElseBranchActivity>
+				<IfElseBranchActivity x:Name="NoErrors" Description="No Errors or warnings">
+					<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity8" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Witness&quot; title=&quot;Experiment  is Ready for witness&quot; description=&quot;Please witness experiment and transition as needed. &quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+					<SetStateActivity x:Name="setStateActivity16" TargetStateName="PendingWitness" />
+				</IfElseBranchActivity>
+			</IfElseActivity>
+		</EventDrivenActivity>
+		<EventDrivenActivity x:Name="keepInProgressActivity" Description="Document is in progress">
+			<ns1:SymyxTransitionActivity Description="Keep Experiment In Progress" Title="Keep Experiment In Progress" EventKey="keepInProgressActivity+Symyx.Workflow.ISymyxWorkflowEvent+Event03" x:Name="keepInProgressActivity1" EventName="Event03" AllowedActors="Author" RequiredSignature="" />
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity1" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<SetStateActivity x:Name="setStateActivity1" TargetStateName="InProgress" />
+		</EventDrivenActivity>
+		<EventDrivenActivity x:Name="ReadyforWorkgroupActivity" Description="Complete and waiting for data ">
+			<ns1:SymyxTransitionActivity Description="Open For Collaboration" Title="Open For Collaboration" EventKey="inProgressToWaitingForData+Symyx.Workflow.ISymyxWorkflowEvent+Event02" x:Name="CompletedWaitingForData" EventName="Event02" AllowedActors="Author" RequiredSignature="Submit" />
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity5" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity16" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Workgroup&quot; title=&quot;Experiment open for collaboration&quot; description=&quot;Experiment is ready for collaborator data.&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+			<SetStateActivity x:Name="setStateActivity6" TargetStateName="InProgressforWorkgroup" />
+		</EventDrivenActivity>
+	</StateActivity>
+	<StateActivity x:Name="PendingWitness" Description="Signed and Pending Witnessing">
+		<StateInitializationActivity x:Name="stateInitializationActivity2">
+			<ns0:SymyxRemoveSecurityActivity x:Name="symyxRemoveSecurityActivity1" Description="Remove previously set security" SecurityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<ns0:SymyxSetSecurityActivity SecurityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetSecurityActivity2" Description="Set security for signed stage" ActorPermissions="&lt;WorkflowPermissions&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;WriteData UpdateProperties UpdateFlags UpdatePermissions Checkout&quot; type=&quot;deny&quot; actor=&quot;Author&quot; /&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;TraverseFolder ReadData ReadPermissions WorkflowTransition ReadProperties&quot; type=&quot;allow&quot; actor=&quot;Author&quot; /&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;TraverseFolder ReadData UpdateProperties UpdateFlags ReadPermissions UpdatePermissions WorkflowTransition Checkout ReadProperties&quot; type=&quot;allow&quot; actor=&quot;Witness&quot; /&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;WriteData&quot; type=&quot;deny&quot; actor=&quot;Witness&quot; /&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;TraverseFolder ReadData ReadPermissions WorkflowTransition ReadProperties&quot; type=&quot;allow&quot; actor=&quot;Workgroup&quot; /&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;WriteData Delete UpdateProperties UpdateFlags UpdatePermissions Checkout Execute&quot; type=&quot;deny&quot; actor=&quot;Workgroup&quot; /&gt;&#xD;&#xA;&lt;/WorkflowPermissions&gt;" />
+		</StateInitializationActivity>
+		<EventDrivenActivity x:Name="ReturnToAuthorActivity" Description="Return document to author for changes">
+			<ns1:SymyxTransitionActivity Description="Return to author" Title="Return to author" EventKey="ReturnToAuthorActivity+Symyx.Workflow.ISymyxWorkflowEvent+Event04" x:Name="symyxTransitionActivity1" EventName="Event04" AllowedActors="Witness" RequiredSignature="Submit" />
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity2" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity1" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Author&quot; title=&quot;Experiment is has been returned.&quot; description=&quot;Experiment has been returned, please edit and transition as needed&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" Description="Tell author document is waiting" />
+			<SetStateActivity x:Name="setStateActivity3" TargetStateName="Returned" />
+		</EventDrivenActivity>
+		<EventDrivenActivity x:Name="WitnessedActivity" Description="Witnessed the experiment">
+			<ns1:SymyxTransitionActivity Description="Complete Witnessing" Title="Complete Witness" EventKey="ReviewedActivity+Symyx.Workflow.ISymyxWorkflowEvent+Event05" x:Name="WitnessedExperiment" EventName="Event05" AllowedActors="Witness" RequiredSignature="Submit" />
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity10" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<ns4:SymyxRemoveCommentsActivity ActivityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxRemoveCommentsActivity2" />
+			<SetStateActivity x:Name="setStateActivity4" TargetStateName="Witnessed" />
+		</EventDrivenActivity>
+		<EventDrivenActivity x:Name="AWithdrawfromWitnessActivity" Description="Author withdraws the document">
+			<ns1:SymyxTransitionActivity Description="Withdraw from Witness" Title="Withdraw from Witness" EventKey="WithdrawActivity+Symyx.Workflow.ISymyxWorkflowEvent+Event07" x:Name="symyxTransitionActivity2" EventName="Event07" AllowedActors="Author" RequiredSignature="Submit" />
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity4" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<SetStateActivity x:Name="setStateActivity7" TargetStateName="InProgress" />
+		</EventDrivenActivity>
+		<EventDrivenActivity x:Name="WGWithdrawfromWitnessActivity">
+			<ns1:SymyxTransitionActivity Description="Withdraw from Witness" Title="Withdraw from Witness" EventKey="WGWithdrawfromWitnessActivity+Symyx.Workflow.ISymyxWorkflowEvent+Event11" x:Name="symyxTransitionActivity10" EventName="Event11" AllowedActors="Workgroup" RequiredSignature="Submit" />
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity12" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<SetStateActivity x:Name="setStateActivity17" TargetStateName="InProgressforWorkgroup" />
+		</EventDrivenActivity>
+	</StateActivity>
+	<StateActivity x:Name="Witnessed" Description="Experiment Witnessed">
+		<StateInitializationActivity x:Name="stateInitializationActivity3">
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity3" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<ns4:SymyxRemoveCommentsActivity ActivityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxRemoveCommentsActivity1" />
+			<ns0:SymyxRemoveSecurityActivity x:Name="symyxRemoveSecurityActivity2" SecurityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<ns0:SymyxSetSecurityActivity SecurityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetSecurityActivity3" ActorPermissions="&lt;WorkflowPermissions&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;WriteData UpdateProperties UpdateFlags UpdatePermissions WorkflowTransition Checkout Rollback&quot; type=&quot;deny&quot; actor=&quot;Author&quot; /&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;TraverseFolder ReadData ReadPermissions ReadProperties&quot; type=&quot;allow&quot; actor=&quot;Author&quot; /&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;TraverseFolder ReadData UpdateProperties UpdateFlags ReadPermissions UpdatePermissions WorkflowTransition Checkout ReadProperties&quot; type=&quot;allow&quot; actor=&quot;WFAdmin&quot; /&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;WriteData&quot; type=&quot;deny&quot; actor=&quot;WFAdmin&quot; /&gt;&#xD;&#xA;&lt;/WorkflowPermissions&gt;" />
+		</StateInitializationActivity>
+		<EventDrivenActivity x:Name="RemoveFromWorkflowActivity">
+			<ns1:SymyxTransitionActivity Description="Remove from Workflow" Title="Remove from Workflow" EventKey="RemoveFromWorkflowActivity1+Symyx.Workflow.ISymyxWorkflowEvent+Event08" x:Name="symyxTransitionActivity8" EventName="Event08" AllowedActors="WFAdmin" RequiredSignature="Submit" />
+			<ns4:SymyxRemoveCommentsActivity ActivityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxRemoveCommentsActivity3" />
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity13" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<ns0:SymyxRemoveSecurityActivity x:Name="symyxRemoveSecurityActivity6" SecurityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<SetStateActivity x:Name="setStateActivity5" TargetStateName="TerminateWorkFlow" />
+		</EventDrivenActivity>
+		<EventDrivenActivity x:Name="Reverted">
+			<ns1:SymyxTransitionActivity Description="Revert to In Progress" Title="Revert to In Progress" EventKey="Reverted+Symyx.Workflow.ISymyxWorkflowEvent+Event12" x:Name="symyxTransitionActivity9" EventName="Event12" AllowedActors="WFAdmin" RequiredSignature="Submit" />
+			<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity9" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Author&quot; title=&quot;Experiment has been reverted&quot; description=&quot;Experiment has been reverted. Please execute appropriate action.&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+			<SetStateActivity x:Name="setStateActivity9" TargetStateName="InProgress" />
+		</EventDrivenActivity>
+	</StateActivity>
+	<StateActivity x:Name="InProgressforWorkgroup" Description="Keep In Progress for Workgroup">
+		<StateInitializationActivity x:Name="stateInitializationActivity4">
+			<ns0:SymyxRemoveSecurityActivity x:Name="symyxRemoveSecurityActivity3" Description="Remove previously set security" SecurityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<ns0:SymyxSetSecurityActivity SecurityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetSecurityActivity4" Description="Set security for Waiting For Data stage " ActorPermissions="&lt;WorkflowPermissions&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;TraverseFolder ReadData WriteData UpdateProperties UpdateFlags ReadPermissions UpdatePermissions WorkflowTransition Checkout RepositorySubscription ReadProperties&quot; type=&quot;allow&quot; actor=&quot;Author&quot; /&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;Rollback&quot; type=&quot;deny&quot; actor=&quot;Author&quot; /&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;TraverseFolder ReadData WriteData UpdateProperties UpdateFlags ReadPermissions UpdatePermissions WorkflowTransition Checkout ReadProperties&quot; type=&quot;allow&quot; actor=&quot;Workgroup&quot; /&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;Rollback&quot; type=&quot;deny&quot; actor=&quot;Workgroup&quot; /&gt;&#xD;&#xA;&lt;/WorkflowPermissions&gt;" />
+		</StateInitializationActivity>
+		<EventDrivenActivity x:Name="WorkgroupCollaborationCompleteActivity">
+			<ns1:SymyxTransitionActivity Description="Collaboration Complete; return to Author" Title="Collaboration Complete; return to Author" EventKey="ReturningToAuthorActivity+Symyx.Workflow.ISymyxWorkflowEvent+Event09" x:Name="symyxTransitionActivity3" EventName="Event09" AllowedActors="Author, Workgroup" RequiredSignature="Collaboration Complete" />
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity6" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity4" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Author&quot; title=&quot;Experiment is ready for Author action.&quot; description=&quot;Data entered per request and is ready for author action.&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+			<SetStateActivity x:Name="setStateActivity8" TargetStateName="InProgress" />
+		</EventDrivenActivity>
+		<EventDrivenActivity x:Name="KeepInProgressforWorkgroupActivity">
+			<ns1:SymyxTransitionActivity Description="Keep Experiment In Progress" Title="Keep Experiment In Progress" EventKey="eventDrivenActivity3+Symyx.Workflow.ISymyxWorkflowEvent+Event10" x:Name="symyxTransitionActivity4" EventName="Event10" AllowedActors="Author, Workgroup" RequiredSignature="In Progress" />
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity15" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<SetStateActivity x:Name="setStateActivity10" TargetStateName="InProgressforWorkgroup" />
+		</EventDrivenActivity>
+		<EventDrivenActivity x:Name="InProgressforWorkgroupToRequestWitnessActivity">
+			<ns1:SymyxTransitionActivity Description="Request Witness" Title="Request Witness" EventKey="WaitForDataToRequestReviewActivity+Symyx.Workflow.ISymyxWorkflowEvent+Event11" x:Name="symyxTransitionActivity5" EventName="Event11" AllowedActors="Author" RequiredSignature="Request Witness" />
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity7" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<ns3:SymyxReviewActivity ActivityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxReviewActivity2" UnableToReview="{ActivityBind PilotWorkflow,Path=UnableToReview}" Workspace="{x:Null}" InformationalCount="{ActivityBind PilotWorkflow,Path=InformationalCount}" WarningCount="{ActivityBind PilotWorkflow,Path=WarningCount}" ErrorCount="{ActivityBind PilotWorkflow,Path=ErrorCount}" ReviewResults="{ActivityBind PilotWorkflow,Path=ReviewResults}" />
+			<IfElseActivity x:Name="ifElseActivity2">
+				<IfElseBranchActivity x:Name="ifElseBranchActivity1">
+					<IfElseBranchActivity.Condition>
+						<RuleConditionReference ConditionName="UnableToReview" />
+					</IfElseBranchActivity.Condition>
+					<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity10" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Witness&quot; title=&quot;Experiment  is Ready for witness&quot; description=&quot;Please witness experiment and transition as needed. Review was unable to be run.&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+					<SetStateActivity x:Name="setStateActivity20" TargetStateName="PendingWitness" />
+				</IfElseBranchActivity>
+				<IfElseBranchActivity x:Name="ifElseBranchActivity4">
+					<IfElseBranchActivity.Condition>
+						<RuleConditionReference ConditionName="HasErrors" />
+					</IfElseBranchActivity.Condition>
+					<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity11" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Author&quot; title=&quot;Experiment  Failed Review&quot; description=&quot;Please correct experiment problems and transition again. (Failed Review)&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+					<SetStateActivity x:Name="setStateActivity19" TargetStateName="InProgressforWorkgroup" />
+				</IfElseBranchActivity>
+				<IfElseBranchActivity x:Name="ifElseBranchActivity5">
+					<IfElseBranchActivity.Condition>
+						<RuleConditionReference ConditionName="HasWarnings" />
+					</IfElseBranchActivity.Condition>
+					<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity12" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Witness&quot; title=&quot;Experiment is ready for witness&quot; description=&quot;Please witness experiment and transition as needed. Warnings were found on review.&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+					<SetStateActivity x:Name="setStateActivity18" TargetStateName="PendingWitness" />
+				</IfElseBranchActivity>
+				<IfElseBranchActivity x:Name="ifElseBranchActivity6">
+					<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity5" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Witness&quot; title=&quot;Experiment is ready for witness.&quot; description=&quot;Please witness experiment and transition as needed.&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+					<SetStateActivity x:Name="setStateActivity11" TargetStateName="PendingWitness" />
+				</IfElseBranchActivity>
+			</IfElseActivity>
+		</EventDrivenActivity>
+	</StateActivity>
+	<StateActivity x:Name="Returned" Description="Witness returned experiment to Author or Workgroup">
+		<StateInitializationActivity x:Name="stateInitializationActivity5">
+			<ns0:SymyxRemoveSecurityActivity x:Name="symyxRemoveSecurityActivity4" SecurityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<ns0:SymyxSetSecurityActivity SecurityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetSecurityActivity5" ActorPermissions="&lt;WorkflowPermissions&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;TraverseFolder ReadData WriteData UpdateProperties UpdateFlags ReadPermissions UpdatePermissions WorkflowTransition Checkout ReadProperties&quot; type=&quot;allow&quot; actor=&quot;Author&quot; /&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;TraverseFolder ReadData UpdateProperties UpdateFlags ReadPermissions UpdatePermissions WorkflowTransition ReadProperties&quot; type=&quot;allow&quot; actor=&quot;Workgroup&quot; /&gt;&#xD;&#xA;  &lt;WorkflowPermission permission=&quot;WriteData Checkout&quot; type=&quot;deny&quot; actor=&quot;Workgroup&quot; /&gt;&#xD;&#xA;&lt;/WorkflowPermissions&gt;" />
+		</StateInitializationActivity>
+		<EventDrivenActivity x:Name="ReturnedToRequestWitnessActivity">
+			<ns1:SymyxTransitionActivity Description="Request Witness" Title="Request Witness" EventKey="ReturnedToRequestReviewActivity+Symyx.Workflow.ISymyxWorkflowEvent+Event12" x:Name="symyxTransitionActivity6" EventName="Event12" AllowedActors="Author" RequiredSignature="Submit" />
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity8" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<ns3:SymyxReviewActivity ActivityObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxReviewActivity3" UnableToReview="{ActivityBind PilotWorkflow,Path=UnableToReview}" Workspace="{x:Null}" InformationalCount="{ActivityBind PilotWorkflow,Path=InformationalCount}" WarningCount="{ActivityBind PilotWorkflow,Path=WarningCount}" ErrorCount="{ActivityBind PilotWorkflow,Path=ErrorCount}" ReviewResults="{ActivityBind PilotWorkflow,Path=ReviewResults}" />
+			<IfElseActivity x:Name="ifElseActivity3">
+				<IfElseBranchActivity x:Name="ifElseBranchActivity7">
+					<IfElseBranchActivity.Condition>
+						<RuleConditionReference ConditionName="UnableToReview" />
+					</IfElseBranchActivity.Condition>
+					<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity15" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Witness&quot; title=&quot;Experiment  is Ready for witness&quot; description=&quot;Please witness experiment and transition as needed. Review was unable to be run.&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+					<SetStateActivity x:Name="setStateActivity23" TargetStateName="PendingWitness" />
+				</IfElseBranchActivity>
+				<IfElseBranchActivity x:Name="ifElseBranchActivity8">
+					<IfElseBranchActivity.Condition>
+						<RuleConditionReference ConditionName="HasErrors" />
+					</IfElseBranchActivity.Condition>
+					<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity14" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Author&quot; title=&quot;Experiment  Failed Review&quot; description=&quot;Please correct experiment problems and transition again. (Failed Review)&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+					<SetStateActivity x:Name="setStateActivity22" TargetStateName="Returned" />
+				</IfElseBranchActivity>
+				<IfElseBranchActivity x:Name="ifElseBranchActivity9">
+					<IfElseBranchActivity.Condition>
+						<RuleConditionReference ConditionName="HasWarnings" />
+					</IfElseBranchActivity.Condition>
+					<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity13" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Witness&quot; title=&quot;Experiment  is Ready for witness&quot; description=&quot;Please witness experiment and transition as needed. Warnings were found on review.&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+					<SetStateActivity x:Name="setStateActivity21" TargetStateName="PendingWitness" />
+				</IfElseBranchActivity>
+				<IfElseBranchActivity x:Name="ifElseBranchActivity10">
+					<ns2:SymyxSetTaskActivity TaskDescription="" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" x:Name="symyxSetTaskActivity6" Tasks="&lt;WorkflowTasks&gt;&#xD;&#xA;  &lt;WorkflowTask actorlist=&quot;Witness&quot; title=&quot;Experiment is ready for review.&quot; description=&quot;Please review experiment and transition as needed.&quot; /&gt;&#xD;&#xA;&lt;/WorkflowTasks&gt;" />
+					<SetStateActivity x:Name="setStateActivity12" TargetStateName="PendingWitness" />
+				</IfElseBranchActivity>
+			</IfElseActivity>
+		</EventDrivenActivity>
+		<EventDrivenActivity x:Name="ReturnToKeepInProgressActivity">
+			<ns1:SymyxTransitionActivity Description="Return to In Progress" Title="Return to In Progress" EventKey="ReturnToInProgressActivity+Symyx.Workflow.ISymyxWorkflowEvent+Event13" x:Name="symyxTransitionActivity7" EventName="Event13" AllowedActors="Author" RequiredSignature="Submit" />
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity9" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<SetStateActivity x:Name="setStateActivity13" TargetStateName="InProgress" />
+		</EventDrivenActivity>
+		<EventDrivenActivity x:Name="ReturnToKeepInProgressforWorkgroupActivity">
+			<ns1:SymyxTransitionActivity Description="Return to In Progress for Workgroup" Title="Return to In Progress for Workgroup" EventKey="ReturnToKeepInProgressforWorkgroupActivity+Symyx.Workflow.ISymyxWorkflowEvent+Event08" x:Name="symyxTransitionActivity11" EventName="Event08" AllowedActors="Author, Workgroup" RequiredSignature="" />
+			<ns2:SymyxRemoveTaskActivity x:Name="symyxRemoveTaskActivity16" TaskObjectId="{ActivityBind PilotWorkflow,Path=ObjectID}" />
+			<SetStateActivity x:Name="setStateActivity24" TargetStateName="InProgressforWorkgroup" />
+		</EventDrivenActivity>
+	</StateActivity>
+	<StateActivity x:Name="TerminateWorkFlow" />
+</StateMachineWorkflowActivity>
